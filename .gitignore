@@ -1,0 +1,20 @@
+#React
+noode_modules/
+build/
+dist/
+.env
+
+#Spring Boot
+target/
+*.class
+*.jar
+*.log
+
+#IDE
+.vscode/
+.idea/
+*.iml
+
+#OS
+.DS_Store
+Thumbs.db
