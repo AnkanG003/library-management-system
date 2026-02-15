@@ -1,38 +1,49 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setError("");
+    setSuccess("");
+
+    // Password match check
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await api.post("/api/auth/login", {
+      await api.post("/api/auth/register", {
         username,
         password,
       });
 
-      const { token, role } = response.data;
+      setSuccess("Registration successful! Redirecting to login...");
 
-      // Store auth data
-      localStorage.setItem("token", token);
-      localStorage.setItem("role", role);
-      localStorage.setItem("username", username);
-
-      // Temporary redirect (we'll improve later)
-      navigate("/dashboard");
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
 
     } catch (err) {
-      setError("Invalid username or password");
+      if (err.response?.status === 400) {
+        setError("Username already exists");
+      } else {
+        setError("Something went wrong. Try again.");
+      }
     } finally {
       setLoading(false);
     }
@@ -43,11 +54,12 @@ export default function Login() {
       <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
 
         <h2 className="text-3xl font-bold text-center text-gray-800">
-          Login
+          Create Account
         </h2>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
 
+          {/* Username */}
           <div>
             <label className="block text-gray-600 mb-1">
               Username
@@ -61,6 +73,7 @@ export default function Login() {
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-gray-600 mb-1">
               Password
@@ -74,9 +87,31 @@ export default function Login() {
             />
           </div>
 
+          {/* Confirm Password */}
+          <div>
+            <label className="block text-gray-600 mb-1">
+              Confirm Password
+            </label>
+            <input
+              type="password"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          {/* Error */}
           {error && (
             <p className="text-red-600 text-sm">
               {error}
+            </p>
+          )}
+
+          {/* Success */}
+          {success && (
+            <p className="text-green-600 text-sm">
+              {success}
             </p>
           )}
 
@@ -85,10 +120,17 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-60"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Creating account..." : "Register"}
           </button>
 
         </form>
+
+        <p className="mt-4 text-center text-gray-600 text-sm">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-600 hover:underline">
+            Login here
+          </Link>
+        </p>
 
       </div>
     </div>
