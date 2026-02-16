@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../services/api";
 
 export default function Login() {
@@ -9,88 +9,161 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
+    // Clear old data 
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("username");
+
     try {
-      const response = await api.post("/api/auth/login", {
+      // API Call
+      const response = await api.post("/auth/login", {
         username,
         password,
       });
 
+      console.log("Login Success:", response.data);
+
       const { token, role } = response.data;
 
-      // Store auth data
+      // Store Auth Data
       localStorage.setItem("token", token);
       localStorage.setItem("role", role);
       localStorage.setItem("username", username);
 
-      // Temporary redirect (we'll improve later)
+      // Redirect
       navigate("/dashboard");
 
     } catch (err) {
-      setError("Invalid username or password");
+      console.error("Login Error Details:", err.response);
+      const errorMessage = err.response?.data?.message || "Invalid username or password";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="w-full max-w-md bg-white rounded-xl shadow p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 px-4 font-sans">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
 
-        <h2 className="text-3xl font-bold text-center text-gray-800">
-          Login
-        </h2>
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Welcome Back</h2>
+          <p className="text-slate-500 mt-2">Sign in to access your library</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
 
+          {/* Username Input */}
           <div>
-            <label className="block text-gray-600 mb-1">
-              Username
-            </label>
-            <input
-              type="text"
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm placeholder-gray-400"
+                placeholder="Enter your username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+              />
+            </div>
           </div>
 
+          {/* Password Input */}
           <div>
-            <label className="block text-gray-600 mb-1">
-              Password
-            </label>
-            <input
-              type="password"
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div className="relative">
+
+              {/* Left Icon (Lock) */}
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+
+              {/* Input Field */}
+              <input
+                type={showPassword ? "text" : "password"} // Dynamic type
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition shadow-sm placeholder-gray-400" // Added pr-12 for space
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+
+              {/* Right Icon (Toggle Button) */}
+              <button
+                type="button" // Important: prevents form submission
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+              >
+                {showPassword ? (
+                  // Eye Off Icon (Hide)
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                  </svg>
+                ) : (
+                  // Eye Icon (Show)
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
+              </button>
+
+            </div>
           </div>
+      
 
-          {error && (
-            <p className="text-red-600 text-sm">
-              {error}
-            </p>
-          )}
+      {/* Error Alert */}
+      {error && (
+        <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg flex items-center gap-2 animate-pulse border border-red-100">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {error}
+        </div>
+      )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-60"
-          >
-            {loading ? "Logging in..." : "Login"}
-          </button>
+      {/* Submit Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition duration-200 shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed transform active:scale-[0.98]"
+      >
+        {loading ? (
+          <span className="flex items-center justify-center gap-2">
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Logging in...
+          </span>
+        ) : "Sign In"}
+      </button>
+    </form>
 
-        </form>
+        {/* Footer Link */ }
+  <p className="mt-8 text-center text-sm text-gray-600">
+    Don't have an account?{" "}
+    <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500 hover:underline">
+      Create one here
+    </Link>
+  </p>
 
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }
