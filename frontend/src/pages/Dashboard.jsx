@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
 export default function Dashboard() {
   const navigate = useNavigate(); // Hook for redirection
   const role = localStorage.getItem("role");
-  const username = localStorage.getItem("username"); 
+  const username = localStorage.getItem("username");
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,14 +35,20 @@ export default function Dashboard() {
   };
 
   const handleAddBook = async (e) => {
-    e.preventDefault(); 
+    e.preventDefault();
+
+    const parsedCopies = Number(totalCopies);
+    if (parsedCopies < 0) {
+      alert("Total Copies can't be less than 0")
+    }
+
     try {
       await api.post("/books", {
         title,
         author,
         isbn,
         category,
-        totalCopies: Number(totalCopies),
+        totalCopies: parsedCopies,
       });
 
       // Reset & Close
@@ -52,7 +58,7 @@ export default function Dashboard() {
       setCategory("");
       setTotalCopies("");
       setShowForm(false);
-      
+
       // Refresh list
       fetchBooks();
     } catch (error) {
@@ -62,8 +68,8 @@ export default function Dashboard() {
   };
 
   const handleLogout = () => {
-    localStorage.clear(); 
-    navigate("/login"); 
+    localStorage.clear();
+    navigate("/login");
   };
 
   const filteredBooks = useMemo(() => {
@@ -75,10 +81,10 @@ export default function Dashboard() {
 
   // Stats Configuration
   const stats = [
-    { 
-      label: "Total Books", 
-      value: books.length, 
-      color: "text-blue-600", 
+    {
+      label: "Total Books",
+      value: books.length,
+      color: "text-blue-600",
       bg: "bg-blue-50",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,10 +92,10 @@ export default function Dashboard() {
         </svg>
       )
     },
-    { 
-      label: "Categories", 
-      value: [...new Set(books.map(b => b.category))].length, 
-      color: "text-purple-600", 
+    {
+      label: "Categories",
+      value: [...new Set(books.map(b => b.category))].length,
+      color: "text-purple-600",
       bg: "bg-purple-50",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,10 +103,10 @@ export default function Dashboard() {
         </svg>
       )
     },
-    { 
-      label: "Total Copies", 
-      value: books.reduce((acc, curr) => acc + curr.totalCopies, 0), 
-      color: "text-emerald-600", 
+    {
+      label: "Total Copies",
+      value: books.reduce((acc, curr) => acc + curr.totalCopies, 0),
+      color: "text-emerald-600",
       bg: "bg-emerald-50",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +119,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Header & Actions */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div>
@@ -122,7 +128,7 @@ export default function Dashboard() {
               Welcome back, <span className="font-medium text-slate-700">{username || "User"}</span>
             </p>
           </div>
-          
+
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
             {/* Search Bar */}
             <div className="relative w-full md:w-64 group">
@@ -142,7 +148,7 @@ export default function Dashboard() {
 
             {/* Admin Add Button */}
             {role === "ADMIN" && (
-              <button 
+              <button
                 onClick={() => setShowForm(!showForm)}
                 className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-md hover:shadow-lg"
               >
@@ -154,7 +160,7 @@ export default function Dashboard() {
             )}
 
             {/* Logout Button */}
-            <button 
+            <button
               onClick={handleLogout}
               className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-100 px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm"
             >
@@ -194,7 +200,7 @@ export default function Dashboard() {
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            
+
             <form onSubmit={handleAddBook} className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700">Title</label>
@@ -214,7 +220,12 @@ export default function Dashboard() {
               </div>
               <div className="space-y-1 md:col-span-2">
                 <label className="text-sm font-medium text-gray-700">Total Copies</label>
-                <input required type="number" placeholder="How many copies?" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={totalCopies} onChange={(e) => setTotalCopies(e.target.value)} />
+                <input
+                  required type="text" inputMode="numeric" placeholder="How many copies?"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                  value={totalCopies}
+                  onChange={(e) => setTotalCopies(e.target.value.replace(/\D/g, ""))}
+                />
               </div>
 
               <div className="md:col-span-2 flex gap-3 pt-2">
@@ -298,16 +309,15 @@ function BookCard({ book }) {
               {book.availableCopies} <span className="text-gray-400 font-normal">/ {book.totalCopies}</span>
             </span>
           </div>
-          
+
           <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-            <div 
-              className={`h-full rounded-full transition-all duration-500 ease-out ${
-                isLowStock ? 'bg-rose-500' : 'bg-emerald-500'
-              }`}
+            <div
+              className={`h-full rounded-full transition-all duration-500 ease-out ${isLowStock ? 'bg-rose-500' : 'bg-emerald-500'
+                }`}
               style={{ width: `${availabilityPct}%` }}
             />
           </div>
-          
+
           {isLowStock && (
             <div className="flex items-center gap-2 text-xs text-rose-600 font-bold mt-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

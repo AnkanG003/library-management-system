@@ -21,4 +21,34 @@ public class BookService {
     public List<Book> getAllBooks() {
         return bookRepository.findAll();
     }
+
+
+    public Book getBookById(Long id){
+
+        return bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Book not found with id: " + id ));
+    }
+
+    public void deleteBook(Long id) {
+
+        Book book = bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Book not found"));
+
+        bookRepository.delete(book);
+    }
+
+    public Book updateBook(Long id, Book updatedBook) {
+
+        Book existingBook = bookRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
+
+        existingBook.setTitle(updatedBook.getTitle());
+        existingBook.setAuthor(updatedBook.getAuthor());
+        existingBook.setIsbn(updatedBook.getIsbn());
+        existingBook.setCategory(updatedBook.getCategory());
+        existingBook.setTotalCopies(updatedBook.getTotalCopies());
+        existingBook.setAvailableCopies(updatedBook.getAvailableCopies());
+
+        return bookRepository.save(existingBook);
+    }
 }
