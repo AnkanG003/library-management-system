@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [category, setCategory] = useState("");
   const [totalCopies, setTotalCopies] = useState("");
 
+
   useEffect(() => {
     fetchBooks();
   }, []);
@@ -33,6 +34,29 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  const handleBorrow = async (bookId) => {
+    try {
+      const response = await api.post(`/borrow/${bookId}`);
+
+      alert(response.data);
+      fetchBooks();
+    } catch (error) {
+      alert(error.response?.data || "Failed to borrow book");
+    }
+  };
+
+  const handleReturn = async (bookId) => {
+    try {
+      const response = await api.post(`/borrow/return/${bookId}`);
+      alert(response.data);
+      fetchBooks();
+    } catch (error) {
+      alert(error.response?.data || "Failed to return book");
+    }
+  };
+
+
 
   const handleAddBook = async (e) => {
     e.preventDefault();
@@ -268,7 +292,12 @@ export default function Dashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBooks.map((book) => (
-                <BookCard key={book.id} book={book} />
+                <BookCard 
+                  key={book.id} 
+                  book={book} 
+                  onBorrow={() => handleBorrow(book.id)} 
+                  onReturn={() => handleReturn(book.id)}
+                />
               ))}
             </div>
           )}
@@ -276,11 +305,12 @@ export default function Dashboard() {
       </div>
     </div>
   );
-}
+
 
 // --- Sub-components  ---
 
-function BookCard({ book }) {
+function BookCard({ book, onBorrow, onReturn }) {
+  const role = localStorage.getItem("role");
   const availabilityPct = (book.availableCopies / book.totalCopies) * 100;
   const isLowStock = book.availableCopies < 3;
 
@@ -312,13 +342,31 @@ function BookCard({ book }) {
 
           <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${isLowStock ? 'bg-rose-500' : 'bg-emerald-500'
-                }`}
+              className={`h-full rounded-full transition-all duration-500 ease-out ${isLowStock ? 'bg-rose-500' : 'bg-emerald-500'}`}
               style={{ width: `${availabilityPct}%` }}
             />
           </div>
 
-          {isLowStock && (
+          {/* New Action Buttons for Members */}
+          {role === "MEMBER" && (
+            <div className="flex gap-2 pt-4">
+              <button
+                onClick={onBorrow}
+                disabled={book.availableCopies === 0}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                Borrow
+              </button>
+              <button
+                onClick={onReturn}
+                className="flex-1 border border-blue-600 text-blue-600 hover:bg-blue-50 py-2 rounded-lg text-sm font-semibold transition"
+              >
+                Return
+              </button>
+            </div>
+          )}
+
+          {isLowStock && !(book.availableCopies === 0) && (
             <div className="flex items-center gap-2 text-xs text-rose-600 font-bold mt-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -345,4 +393,5 @@ function BookSkeleton() {
       <div className="mt-3 h-2 w-full bg-gray-100 rounded-full"></div>
     </div>
   );
+}
 }
