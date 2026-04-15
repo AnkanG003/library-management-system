@@ -38,16 +38,21 @@ public class BookService {
     }
 
     public Book updateBook(Long id, Book updatedBook) {
-
         Book existingBook = bookRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Book not found with id: " + id));
+
+
+        int difference = updatedBook.getTotalCopies() - existingBook.getTotalCopies();
 
         existingBook.setTitle(updatedBook.getTitle());
         existingBook.setAuthor(updatedBook.getAuthor());
         existingBook.setIsbn(updatedBook.getIsbn());
         existingBook.setCategory(updatedBook.getCategory());
         existingBook.setTotalCopies(updatedBook.getTotalCopies());
-        existingBook.setAvailableCopies(updatedBook.getAvailableCopies());
+        
+        int newAvailable = existingBook.getAvailableCopies() + difference;
+
+        existingBook.setAvailableCopies(Math.max(0, newAvailable));
 
         return bookRepository.save(existingBook);
     }

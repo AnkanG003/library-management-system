@@ -18,11 +18,48 @@ export default function Dashboard() {
   const [isbn, setIsbn] = useState("");
   const [category, setCategory] = useState("");
   const [totalCopies, setTotalCopies] = useState("");
-
+  const [editingBookId, setEditingBookId] = useState(null);
 
   useEffect(() => {
     fetchBooks();
   }, []);
+
+
+  // Function to delete a book
+const handleDelete = async (id) => {
+  if (window.confirm("Are you sure you want to delete this book?")) {
+    try {
+      await api.delete(`/books/${id}`);
+      fetchBooks();
+    } catch (error) {
+      alert("Failed to delete book.");
+    }
+  }
+};
+
+// Function to populate the form with existing book data
+const openEditForm = (book) => {
+  setEditingBookId(book.id);
+  setTitle(book.title);
+  setAuthor(book.author);
+  setIsbn(book.isbn);
+  setCategory(book.category);
+  setTotalCopies(book.totalCopies.toString());
+  setShowForm(true);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+};
+
+// Function to clear form and exit edit mode
+const resetForm = () => {
+  setTitle("");
+  setAuthor("");
+  setIsbn("");
+  setCategory("");
+  setTotalCopies("");
+  setEditingBookId(null);
+  setShowForm(false);
+};
+
 
   const fetchBooks = async () => {
     try {
@@ -57,40 +94,41 @@ export default function Dashboard() {
   };
 
 
+const handleAddBook = async (e) => {
+  e.preventDefault();
+  
+  // Validation: Ensure copies is a valid number
+  const parsedCopies = Number(totalCopies);
+  if (isNaN(parsedCopies) || parsedCopies < 0) {
+    alert("Please enter a valid number for Total Copies (0 or more).");
+    return;
+  }
 
-  const handleAddBook = async (e) => {
-    e.preventDefault();
-
-    const parsedCopies = Number(totalCopies);
-    if (parsedCopies < 0) {
-      alert("Total Copies can't be less than 0")
-    }
-
-    try {
-      await api.post("/books", {
-        title,
-        author,
-        isbn,
-        category,
-        totalCopies: parsedCopies,
-      });
-
-      // Reset & Close
-      setTitle("");
-      setAuthor("");
-      setIsbn("");
-      setCategory("");
-      setTotalCopies("");
-      setShowForm(false);
-
-      // Refresh list
-      fetchBooks();
-    } catch (error) {
-      console.error("Failed to add book", error);
-      alert("Failed to add book. Ensure you are ADMIN.");
-    }
+  const bookData = {
+    title,
+    author,
+    isbn,
+    category,
+    totalCopies: parsedCopies,
   };
 
+  try {
+    if (editingBookId) {
+      await api.put(`/books/${editingBookId}`, bookData);
+      alert("Book updated successfully!");
+    } else {
+      await api.post("/books", bookData);
+      alert("Book added successfully!");
+    }
+    
+    resetForm();  
+    fetchBooks(); 
+  } catch (error) {
+    console.error("Failed to save book", error);
+    const errorMsg = error.response?.data || "Operation failed. Ensure you are ADMIN.";
+    alert(errorMsg);
+  }
+};
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
@@ -215,55 +253,55 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* ADMIN FORM - Shows only if toggled */}
-        {showForm && (
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">Add New Book</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+       {showForm && (
+        <div className="bg-white rounded-2xl border border-blue-100 shadow-xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-slate-800">
+              {editingBookId ? "Update Book Details" : "Add New Book"}
+            </h2>
+            <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+
+          <form onSubmit={handleAddBook} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Title</label>
+              <input required placeholder="Enter book title" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={title} onChange={(e) => setTitle(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Author</label>
+              <input required placeholder="Enter author name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={author} onChange={(e) => setAuthor(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">ISBN</label>
+              <input required placeholder="ISBN Number" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">Category</label>
+              <input required placeholder="e.g. Fiction, Science" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={category} onChange={(e) => setCategory(e.target.value)} />
+            </div>
+            <div className="space-y-1 md:col-span-2">
+              <label className="text-sm font-medium text-gray-700">Total Copies</label>
+              <input
+                required type="text" inputMode="numeric" placeholder="How many copies?"
+                className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                value={totalCopies}
+                onChange={(e) => setTotalCopies(e.target.value.replace(/\D/g, ""))}
+              />
             </div>
 
-            <form onSubmit={handleAddBook} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Title</label>
-                <input required placeholder="Enter book title" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={title} onChange={(e) => setTitle(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Author</label>
-                <input required placeholder="Enter author name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={author} onChange={(e) => setAuthor(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">ISBN</label>
-                <input required placeholder="ISBN Number" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Category</label>
-                <input required placeholder="e.g. Fiction, Science" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={category} onChange={(e) => setCategory(e.target.value)} />
-              </div>
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-sm font-medium text-gray-700">Total Copies</label>
-                <input
-                  required type="text" inputMode="numeric" placeholder="How many copies?"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  value={totalCopies}
-                  onChange={(e) => setTotalCopies(e.target.value.replace(/\D/g, ""))}
-                />
-              </div>
-
-              <div className="md:col-span-2 flex gap-3 pt-2">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm hover:shadow">
-                  Save Book
-                </button>
-                <button type="button" onClick={() => setShowForm(false)} className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
+            <div className="md:col-span-2 flex gap-3 pt-2">
+              <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm hover:shadow">
+                {editingBookId ? "Update Changes" : "Save Book"}
+              </button>
+              <button type="button" onClick={resetForm} className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
         {/* Content Area */}
         <div className="space-y-6">
           <div className="flex items-center justify-between">
@@ -297,6 +335,8 @@ export default function Dashboard() {
                   book={book} 
                   onBorrow={() => handleBorrow(book.id)} 
                   onReturn={() => handleReturn(book.id)}
+                  onEdit={openEditForm}    
+                 onDelete={handleDelete}  
                 />
               ))}
             </div>
@@ -308,8 +348,7 @@ export default function Dashboard() {
 
 
 // --- Sub-components  ---
-
-function BookCard({ book, onBorrow, onReturn }) {
+function BookCard({ book, onBorrow, onReturn, onEdit, onDelete }) {
   const role = localStorage.getItem("role");
   const availabilityPct = (book.availableCopies / book.totalCopies) * 100;
   const isLowStock = book.availableCopies < 3;
@@ -347,7 +386,7 @@ function BookCard({ book, onBorrow, onReturn }) {
             />
           </div>
 
-          {/* New Action Buttons for Members */}
+          {/* Action Buttons for Members */}
           {role === "MEMBER" && (
             <div className="flex gap-2 pt-4">
               <button
@@ -366,6 +405,24 @@ function BookCard({ book, onBorrow, onReturn }) {
             </div>
           )}
 
+          {/* NEW: Action Buttons for Admins */}
+          {role === "ADMIN" && (
+            <div className="flex gap-2 pt-4">
+              <button
+                onClick={() => onEdit(book)}
+                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => onDelete(book.id)}
+                className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm"
+              >
+                Delete
+              </button>
+            </div>
+          )}
+
           {isLowStock && !(book.availableCopies === 0) && (
             <div className="flex items-center gap-2 text-xs text-rose-600 font-bold mt-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,18 +436,32 @@ function BookCard({ book, onBorrow, onReturn }) {
     </div>
   );
 }
-
 function BookSkeleton() {
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm animate-pulse">
+      {/* Category tag skeleton */}
       <div className="w-16 h-5 bg-gray-100 rounded-md mb-4"></div>
+      
+      {/* Title skeleton */}
       <div className="h-7 w-3/4 bg-gray-200 rounded-lg mb-2"></div>
+      
+      {/* Author skeleton */}
       <div className="h-4 w-1/2 bg-gray-100 rounded mb-8"></div>
-      <div className="flex justify-between mt-auto">
+      
+      {/* Availability text skeleton */}
+      <div className="flex justify-between mb-2">
         <div className="h-4 w-20 bg-gray-100 rounded"></div>
         <div className="h-4 w-10 bg-gray-200 rounded"></div>
       </div>
-      <div className="mt-3 h-2 w-full bg-gray-100 rounded-full"></div>
+      
+      {/* Progress bar skeleton */}
+      <div className="h-2 w-full bg-gray-100 rounded-full mb-6"></div>
+
+      {/* Button group skeleton */}
+      <div className="flex gap-2">
+        <div className="h-9 flex-1 bg-gray-100 rounded-lg"></div>
+        <div className="h-9 flex-1 bg-gray-100 rounded-lg"></div>
+      </div>
     </div>
   );
 }

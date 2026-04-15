@@ -7,6 +7,7 @@ import com.library.management.model.User;
 import com.library.management.repository.BookRepository;
 import com.library.management.repository.BorrowRecordRepository;
 import com.library.management.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class BorrowService {
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public String borrowBook(Long bookId) {
         String username = SecurityContextHolder
                 .getContext()
@@ -66,6 +68,7 @@ public class BorrowService {
     }
 
 
+    @Transactional
     public String returnBook(Long bookId) {
 
         // get logged in user
@@ -90,6 +93,10 @@ public class BorrowService {
         // increase available copies
         Book book = record.getBook();
         book.setAvailableCopies(book.getAvailableCopies() + 1);
+
+        if (book.getAvailableCopies() > book.getTotalCopies()) {
+            book.setAvailableCopies(book.getTotalCopies());
+        }
         bookRepository.save(book);
 
         return "Book returned successfully";
