@@ -13,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -100,5 +101,17 @@ public class BorrowService {
         bookRepository.save(book);
 
         return "Book returned successfully";
+    }
+
+    public List<BorrowRecord> getMyActiveLoans() {
+        // 1. Get the username of the person logged in from the Security Context
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        // 2. Find that user in the database
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // 3. Use your repository method to find only 'ISSUED' books
+        return borrowRecordRepository.findByUserAndStatus(user, BorrowStatus.ISSUED);
     }
 }

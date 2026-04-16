@@ -1,13 +1,13 @@
 package com.library.management.controller;
 
+import com.library.management.model.BorrowRecord;
 import com.library.management.service.BorrowService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -27,5 +27,11 @@ public class BorrowController {
     @PreAuthorize("hasRole('MEMBER')")
     public ResponseEntity<String> returnBook(@PathVariable Long bookId){
         return ResponseEntity.ok(borrowService.returnBook(bookId));
+    }
+
+    @GetMapping("/my-loans")
+    @PreAuthorize("hasRole('MEMBER')") // Only members need to see their personal loans
+    public ResponseEntity<List<BorrowRecord>> getMyLoans() {
+        return ResponseEntity.ok(borrowService.getMyActiveLoans());
     }
 }

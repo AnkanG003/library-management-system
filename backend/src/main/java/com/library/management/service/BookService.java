@@ -49,7 +49,7 @@ public class BookService {
         existingBook.setIsbn(updatedBook.getIsbn());
         existingBook.setCategory(updatedBook.getCategory());
         existingBook.setTotalCopies(updatedBook.getTotalCopies());
-        
+
         int newAvailable = existingBook.getAvailableCopies() + difference;
 
         existingBook.setAvailableCopies(Math.max(0, newAvailable));
