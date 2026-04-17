@@ -1,5 +1,6 @@
 package com.library.management.controller;
 
+import com.library.management.dto.auth.DeleteRequest;
 import com.library.management.model.Book;
 import com.library.management.service.BookService;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +47,13 @@ public class BookController {
     }
 
     // ONLY ADMIN can delete
-    @DeleteMapping("/{id}")
+    @PostMapping("{id}/delete")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> deleteBook(@PathVariable Long id) {
-        bookService.deleteBook(id);
+    public ResponseEntity<String> deleteBook(
+            @PathVariable Long id,
+            @RequestBody DeleteRequest request
+            ) {
+        bookService.deleteBook(id, request.getPassword());
         return ResponseEntity.ok("Book deleted successfully");
     }
 }

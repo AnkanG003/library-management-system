@@ -5,7 +5,7 @@ import api from "../services/api";
 
 
 export default function Dashboard() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const role = localStorage.getItem("role");
   const username = localStorage.getItem("username");
 
@@ -23,56 +23,65 @@ export default function Dashboard() {
   const [editingBookId, setEditingBookId] = useState(null);
   const [myLoans, setMyLoans] = useState([]);
 
-const fetchMyLoans = async () => {
-  try {
-    const response = await api.get("/borrow/my-loans");
-    setMyLoans(response.data);
-  } catch (error) {
-    console.error("Failed to fetch personal loans", error);
-  }
-};
+  const fetchMyLoans = async () => {
+    try {
+      const response = await api.get("/borrow/my-loans");
+      setMyLoans(response.data);
+    } catch (error) {
+      console.error("Failed to fetch personal loans", error);
+    }
+  };
 
 
   useEffect(() => {
-    fetchBooks();
+  fetchBooks();
+  const role = localStorage.getItem("role");
+  if (role === "MEMBER") {
     fetchMyLoans();
-  }, []);
+  }
+}, []);
 
 
   // Function to delete a book
-const handleDelete = async (id) => {
-  if (window.confirm("Are you sure you want to delete this book?")) {
+  const handleDelete = async (bookId) => {
+    const password = window.prompt("Enter Admin Password to deactivate this book:");
+    if (!password) return;
+
     try {
-      await api.delete(`/books/${id}`);
+      const response = await api.post(`/books/${bookId}/delete`, {
+        password: password
+      });
+
+      alert(response.data);
       fetchBooks();
     } catch (error) {
-      alert("Failed to delete book.");
+      const message = error.response?.data || "Authorization failed";
+      alert(message);
     }
-  }
-};
+  };
 
-// Function to populate the form with existing book data
-const openEditForm = (book) => {
-  setEditingBookId(book.id);
-  setTitle(book.title);
-  setAuthor(book.author);
-  setIsbn(book.isbn);
-  setCategory(book.category);
-  setTotalCopies(book.totalCopies.toString());
-  setShowForm(true);
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
+  // Function to populate the form with existing book data
+  const openEditForm = (book) => {
+    setEditingBookId(book.id);
+    setTitle(book.title);
+    setAuthor(book.author);
+    setIsbn(book.isbn);
+    setCategory(book.category);
+    setTotalCopies(book.totalCopies.toString());
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-// Function to clear form and exit edit mode
-const resetForm = () => {
-  setTitle("");
-  setAuthor("");
-  setIsbn("");
-  setCategory("");
-  setTotalCopies("");
-  setEditingBookId(null);
-  setShowForm(false);
-};
+  // Function to clear form and exit edit mode
+  const resetForm = () => {
+    setTitle("");
+    setAuthor("");
+    setIsbn("");
+    setCategory("");
+    setTotalCopies("");
+    setEditingBookId(null);
+    setShowForm(false);
+  };
 
 
   const fetchBooks = async () => {
@@ -86,20 +95,20 @@ const resetForm = () => {
     }
   };
 
-const handleBorrow = async (bookId) => {
-  try {
-    const response = await api.post(`/borrow/${bookId}`);
-    
+  const handleBorrow = async (bookId) => {
+    try {
+      const response = await api.post(`/borrow/${bookId}`);
 
-    alert(response.data || "Book borrowed successfully!");
-    await Promise.all([fetchBooks(), fetchMyLoans()]);
-    
-  } catch (error) {
-    console.error("Borrowing failed:", error)
-    const errorMessage = error.response?.data || "An unexpected error occurred while borrowing.";
-    alert(errorMessage);
-  }
-};
+
+      alert(response.data || "Book borrowed successfully!");
+      await Promise.all([fetchBooks(), fetchMyLoans()]);
+
+    } catch (error) {
+      console.error("Borrowing failed:", error)
+      const errorMessage = error.response?.data || "An unexpected error occurred while borrowing.";
+      alert(errorMessage);
+    }
+  };
 
   const handleReturn = async (bookId) => {
     try {
@@ -115,39 +124,39 @@ const handleBorrow = async (bookId) => {
   };
 
 
-const handleAddBook = async (e) => {
-  e.preventDefault();
-  const parsedCopies = Number(totalCopies);
-  if (isNaN(parsedCopies) || parsedCopies < 0) {
-    alert("Please enter a valid number for Total Copies (0 or more).");
-    return;
-  }
-
-  const bookData = {
-    title,
-    author,
-    isbn,
-    category,
-    totalCopies: parsedCopies,
-  };
-
-  try {
-    if (editingBookId) {
-      await api.put(`/books/${editingBookId}`, bookData);
-      alert("Book updated successfully!");
-    } else {
-      await api.post("/books", bookData);
-      alert("Book added successfully!");
+  const handleAddBook = async (e) => {
+    e.preventDefault();
+    const parsedCopies = Number(totalCopies);
+    if (isNaN(parsedCopies) || parsedCopies < 0) {
+      alert("Please enter a valid number for Total Copies (0 or more).");
+      return;
     }
-    
-    resetForm();  
-    fetchBooks(); 
-  } catch (error) {
-    console.error("Failed to save book", error);
-    const errorMsg = error.response?.data || "Operation failed. Ensure you are ADMIN.";
-    alert(errorMsg);
-  }
-};
+
+    const bookData = {
+      title,
+      author,
+      isbn,
+      category,
+      totalCopies: parsedCopies,
+    };
+
+    try {
+      if (editingBookId) {
+        await api.put(`/books/${editingBookId}`, bookData);
+        alert("Book updated successfully!");
+      } else {
+        await api.post("/books", bookData);
+        alert("Book added successfully!");
+      }
+
+      resetForm();
+      fetchBooks();
+    } catch (error) {
+      console.error("Failed to save book", error);
+      const errorMsg = error.response?.data || "Operation failed. Ensure you are ADMIN.";
+      alert(errorMsg);
+    }
+  };
   const handleLogout = () => {
     localStorage.clear();
     navigate("/login");
@@ -197,7 +206,7 @@ const handleAddBook = async (e) => {
     },
   ];
 
-return (
+  return (
     <div className="min-h-screen bg-gray-50/50 p-6 md:p-8 font-sans text-slate-800">
       <div className="max-w-7xl mx-auto space-y-8">
 
@@ -325,9 +334,9 @@ return (
 
         {/* ACTIVE LOANS (USER CART) COMPONENT */}
         {role === "MEMBER" && myLoans.length > 0 && (
-          <ActiveLoans 
-            loans={myLoans} 
-            onReturn={handleReturn} 
+          <ActiveLoans
+            loans={myLoans}
+            onReturn={handleReturn}
           />
         )}
 
@@ -359,13 +368,13 @@ return (
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredBooks.map((book) => (
-                <BookCard 
-                  key={book.id} 
-                  book={book} 
-                  onBorrow={() => handleBorrow(book.id)} 
+                <BookCard
+                  key={book.id}
+                  book={book}
+                  onBorrow={() => handleBorrow(book.id)}
                   onReturn={() => handleReturn(book.id)}
-                  onEdit={() => openEditForm(book)}    
-                  onDelete={() => handleDelete(book.id)}  
+                  onEdit={() => openEditForm(book)}
+                  onDelete={() => handleDelete(book.id)}
                 />
               ))}
             </div>
@@ -376,122 +385,153 @@ return (
   );
 
 
-// --- Sub-components  ---
-function BookCard({ book, onBorrow, onReturn, onEdit, onDelete }) {
-  const role = localStorage.getItem("role");
-  const availabilityPct = (book.availableCopies / book.totalCopies) * 100;
-  const isLowStock = book.availableCopies < 3;
+  // --- Sub-components  ---
+  function BookCard({ book, onBorrow, onReturn, onEdit, onDelete }) {
+    const role = localStorage.getItem("role");
+    const availabilityPct = (book.availableCopies / book.totalCopies) * 100;
+    const isLowStock = book.availableCopies < 3;
 
-  return (
-    <div className="group bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden">
-      <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-full blur-xl opacity-70 group-hover:scale-150 transition-transform duration-500" />
+    const isInactive = book.active === false;
 
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-4">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-600 tracking-wide uppercase">
-            {book.category}
-          </span>
-        </div>
+    return (
+      <div className={`group rounded-2xl border p-6 shadow-sm transition-all duration-300 relative overflow-hidden ${isInactive
+          ? 'bg-gray-50 border-gray-200 opacity-80 grayscale-[0.8]'
+          : 'bg-white border-gray-100 hover:shadow-xl hover:-translate-y-1'
+        }`}>
 
-        <h3 className="text-xl font-bold text-slate-900 mb-1 line-clamp-1 group-hover:text-blue-600 transition-colors">
-          {book.title}
-        </h3>
-        <p className="text-sm text-slate-500 mb-6">
-          by <span className="font-medium text-slate-700">{book.author}</span>
-        </p>
+        {/* Visual background decoration */}
+        <div className={`absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 rounded-full blur-xl opacity-70 transition-transform duration-500 group-hover:scale-150 ${isInactive ? 'bg-gray-200' : 'bg-gradient-to-br from-blue-50 to-blue-100/50'
+          }`} />
 
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-500 font-medium">Availability</span>
-            <span className={`font-bold ${isLowStock ? 'text-rose-600' : 'text-emerald-600'}`}>
-              {book.availableCopies} <span className="text-gray-400 font-normal">/ {book.totalCopies}</span>
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-4">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold tracking-wide uppercase ${isInactive ? 'bg-gray-200 text-gray-500' : 'bg-slate-100 text-slate-600'
+              }`}>
+              {book.category}
             </span>
+
+            {/* ARCHIVED BADGE */}
+            {isInactive && (
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[10px] font-black bg-gray-600 text-white tracking-tighter uppercase animate-pulse">
+                Archived
+              </span>
+            )}
           </div>
 
-          <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-500 ease-out ${isLowStock ? 'bg-rose-500' : 'bg-emerald-500'}`}
-              style={{ width: `${availabilityPct}%` }}
-            />
+          <h3 className={`text-xl font-bold mb-1 line-clamp-1 transition-colors ${isInactive ? 'text-gray-500' : 'text-slate-900 group-hover:text-blue-600'
+            }`}>
+            {book.title}
+          </h3>
+          <p className="text-sm text-slate-500 mb-6">
+            by <span className={`font-medium ${isInactive ? 'text-gray-400' : 'text-slate-700'}`}>{book.author}</span>
+          </p>
+
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 font-medium">Availability</span>
+              <span className={`font-bold ${isInactive ? 'text-gray-400' : isLowStock ? 'text-rose-600' : 'text-emerald-600'}`}>
+                {book.availableCopies} <span className="text-gray-400 font-normal">/ {book.totalCopies}</span>
+              </span>
+            </div>
+
+            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ease-out ${isInactive ? 'bg-gray-300' : isLowStock ? 'bg-rose-500' : 'bg-emerald-500'
+                  }`}
+                style={{ width: `${availabilityPct}%` }}
+              />
+            </div>
+
+            {/* Action Buttons for Members */}
+            {role === "MEMBER" && (
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={onBorrow}
+                  disabled={book.availableCopies === 0 || isInactive}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  {isInactive ? "Unavailable" : "Borrow"}
+                </button>
+                {!isInactive && (
+                  <button
+                    onClick={onReturn}
+                    className="flex-1 border border-blue-600 text-blue-600 hover:bg-blue-50 py-2 rounded-lg text-sm font-semibold transition"
+                  >
+                    Return
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Action Buttons for Admins */}
+            {role === "ADMIN" && (
+              <div className="flex gap-2 pt-4">
+                <button
+                  onClick={() => onEdit(book)}
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm"
+                >
+                  Edit
+                </button>
+
+                {/* Only show Deactivate button if the book is still active */}
+                {!isInactive ? (
+                  <button
+                    onClick={() => onDelete(book.id)}
+                    className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm"
+                  >
+                    Deactivate
+                  </button>
+                ) : (
+                  <button
+                    disabled
+                    className="flex-1 bg-gray-400 text-white py-2 rounded-lg text-sm font-semibold cursor-not-allowed shadow-sm"
+                  >
+                    Inactive
+                  </button>
+                )}
+              </div>
+            )}
+
+            {isLowStock && !isInactive && book.availableCopies !== 0 && (
+              <div className="flex items-center gap-2 text-xs text-rose-600 font-bold mt-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Low Stock Warning
+              </div>
+            )}
           </div>
-
-          {/* Action Buttons for Members */}
-          {role === "MEMBER" && (
-            <div className="flex gap-2 pt-4">
-              <button
-                onClick={onBorrow}
-                disabled={book.availableCopies === 0}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-semibold transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-              >
-                Borrow
-              </button>
-              <button
-                onClick={onReturn}
-                className="flex-1 border border-blue-600 text-blue-600 hover:bg-blue-50 py-2 rounded-lg text-sm font-semibold transition"
-              >
-                Return
-              </button>
-            </div>
-          )}
-
-          {/* NEW: Action Buttons for Admins */}
-          {role === "ADMIN" && (
-            <div className="flex gap-2 pt-4">
-              <button
-                onClick={() => onEdit(book)}
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => onDelete(book.id)}
-                className="flex-1 bg-rose-500 hover:bg-rose-600 text-white py-2 rounded-lg text-sm font-semibold transition shadow-sm"
-              >
-                Delete
-              </button>
-            </div>
-          )}
-
-          {isLowStock && !(book.availableCopies === 0) && (
-            <div className="flex items-center gap-2 text-xs text-rose-600 font-bold mt-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Low Stock Warning
-            </div>
-          )}
         </div>
       </div>
-    </div>
-  );
-}
-function BookSkeleton() {
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm animate-pulse">
-      {/* Category tag skeleton */}
-      <div className="w-16 h-5 bg-gray-100 rounded-md mb-4"></div>
-      
-      {/* Title skeleton */}
-      <div className="h-7 w-3/4 bg-gray-200 rounded-lg mb-2"></div>
-      
-      {/* Author skeleton */}
-      <div className="h-4 w-1/2 bg-gray-100 rounded mb-8"></div>
-      
-      {/* Availability text skeleton */}
-      <div className="flex justify-between mb-2">
-        <div className="h-4 w-20 bg-gray-100 rounded"></div>
-        <div className="h-4 w-10 bg-gray-200 rounded"></div>
-      </div>
-      
-      {/* Progress bar skeleton */}
-      <div className="h-2 w-full bg-gray-100 rounded-full mb-6"></div>
+    );
+  }
+  function BookSkeleton() {
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm animate-pulse">
+        {/* Category tag skeleton */}
+        <div className="w-16 h-5 bg-gray-100 rounded-md mb-4"></div>
 
-      {/* Button group skeleton */}
-      <div className="flex gap-2">
-        <div className="h-9 flex-1 bg-gray-100 rounded-lg"></div>
-        <div className="h-9 flex-1 bg-gray-100 rounded-lg"></div>
+        {/* Title skeleton */}
+        <div className="h-7 w-3/4 bg-gray-200 rounded-lg mb-2"></div>
+
+        {/* Author skeleton */}
+        <div className="h-4 w-1/2 bg-gray-100 rounded mb-8"></div>
+
+        {/* Availability text skeleton */}
+        <div className="flex justify-between mb-2">
+          <div className="h-4 w-20 bg-gray-100 rounded"></div>
+          <div className="h-4 w-10 bg-gray-200 rounded"></div>
+        </div>
+
+        {/* Progress bar skeleton */}
+        <div className="h-2 w-full bg-gray-100 rounded-full mb-6"></div>
+
+        {/* Button group skeleton */}
+        <div className="flex gap-2">
+          <div className="h-9 flex-1 bg-gray-100 rounded-lg"></div>
+          <div className="h-9 flex-1 bg-gray-100 rounded-lg"></div>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 }

@@ -33,4 +33,7 @@ public class Book {
 
     @Column(nullable = false)
     private int availableCopies;
+
+    @Column(nullable = false, columnDefinition = "boolean default true")
+    private boolean active = true;
 }
