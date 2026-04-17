@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ActiveLoans from "../components/ActiveLoans";
 import api from "../services/api";
-
+import TransactionTable from "../components/TransactionTable";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -23,6 +23,27 @@ export default function Dashboard() {
   const [editingBookId, setEditingBookId] = useState(null);
   const [myLoans, setMyLoans] = useState([]);
 
+
+  const [activeTab, setActiveTab] = useState('books');
+  const [transactions, setTransactions] = useState([]);
+
+
+  const handleTabChange = (tab) => {
+  setActiveTab(tab);
+  if (tab === 'history') {
+    fetchTransactions();
+  }
+  };
+
+  const fetchTransactions = async () => {
+  try {
+    const response = await api.get('/borrow/all');
+    setTransactions(response.data);
+  } catch (error) {
+    console.error("Error fetching transaction logs:", error);
+    alert("Could not load transaction history");
+  }
+  };
   const fetchMyLoans = async () => {
     try {
       const response = await api.get("/borrow/my-loans");
@@ -220,24 +241,26 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
-            {/* Search Bar */}
-            <div className="relative w-full md:w-64 group">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+            {/* Search Bar (Only show if we are on the books tab) */}
+            {activeTab === 'books' && (
+              <div className="relative w-full md:w-64 group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  className="block w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                placeholder="Search..."
-                className="block w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            )}
 
-            {/* Admin Add Button  */}
-            {role === "ADMIN" && (
+            {/* Admin Add Button */}
+            {role === "ADMIN" && activeTab === 'books' && (
               <button
                 onClick={() => (showForm ? resetForm() : setShowForm(true))}
                 className="flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-md hover:shadow-lg"
@@ -255,9 +278,6 @@ export default function Dashboard() {
               className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-red-600 hover:bg-red-50 hover:border-red-100 px-5 py-2.5 rounded-xl font-medium transition-all shadow-sm"
             >
               Logout
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
             </button>
           </div>
         </div>
@@ -281,105 +301,138 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* ADMIN FORM */}
-        {showForm && (
-          <div className="bg-white rounded-2xl border border-blue-100 shadow-xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-slate-800">
-                {editingBookId ? "Update Book Details" : "Add New Book"}
-              </h2>
-              <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+        {/* --- NEW TABS UI --- */}
+        {role === "ADMIN" && (
+          <div className="border-b border-slate-200">
+            <nav className="flex space-x-8">
+              <button
+                onClick={() => setActiveTab('books')}
+                className={`pb-4 px-1 border-b-2 font-semibold text-sm transition-all ${
+                  activeTab === 'books'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                Book Management
               </button>
-            </div>
-
-            <form onSubmit={handleAddBook} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Title</label>
-                <input required placeholder="Enter book title" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={title} onChange={(e) => setTitle(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Author</label>
-                <input required placeholder="Enter author name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={author} onChange={(e) => setAuthor(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">ISBN</label>
-                <input required placeholder="ISBN Number" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700">Category</label>
-                <input required placeholder="e.g. Fiction, Science" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={category} onChange={(e) => setCategory(e.target.value)} />
-              </div>
-              <div className="space-y-1 md:col-span-2">
-                <label className="text-sm font-medium text-gray-700">Total Copies</label>
-                <input
-                  required type="text" inputMode="numeric" placeholder="How many copies?"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                  value={totalCopies}
-                  onChange={(e) => setTotalCopies(e.target.value.replace(/\D/g, ""))}
-                />
-              </div>
-
-              <div className="md:col-span-2 flex gap-3 pt-2">
-                <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm hover:shadow">
-                  {editingBookId ? "Update Changes" : "Save Book"}
-                </button>
-                <button type="button" onClick={resetForm} className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
-                  Cancel
-                </button>
-              </div>
-            </form>
+              <button
+                onClick={() => { setActiveTab('history'); fetchTransactions(); }}
+                className={`pb-4 px-1 border-b-2 font-semibold text-sm transition-all ${
+                  activeTab === 'history'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+                }`}
+              >
+                Borrowing History
+              </button>
+            </nav>
           </div>
         )}
 
-        {/* ACTIVE LOANS (USER CART) COMPONENT */}
-        {role === "MEMBER" && myLoans.length > 0 && (
-          <ActiveLoans
-            loans={myLoans}
-            onReturn={handleReturn}
-          />
-        )}
+        {/* Content Switching Logic */}
+        {activeTab === 'books' ? (
+          <>
+            {/* ADMIN FORM (Keep inside books tab) */}
+            {showForm && (
+              <div className="bg-white rounded-2xl border border-blue-100 shadow-xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300 mb-8">
+                {/* ... (Existing form content) ... */}
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold text-slate-800">
+                    {editingBookId ? "Update Book Details" : "Add New Book"}
+                  </h2>
+                  <button onClick={resetForm} className="text-gray-400 hover:text-gray-600">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
 
-        {/* Content Area */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-800">
-              {searchTerm ? `Results for "${searchTerm}"` : "All Books"}
-            </h2>
-            <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
-              {filteredBooks.length} items
-            </span>
-          </div>
+                <form onSubmit={handleAddBook} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Title</label>
+                    <input required placeholder="Enter book title" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={title} onChange={(e) => setTitle(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Author</label>
+                    <input required placeholder="Enter author name" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={author} onChange={(e) => setAuthor(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">ISBN</label>
+                    <input required placeholder="ISBN Number" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={isbn} onChange={(e) => setIsbn(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-sm font-medium text-gray-700">Category</label>
+                    <input required placeholder="e.g. Fiction, Science" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition" value={category} onChange={(e) => setCategory(e.target.value)} />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Total Copies</label>
+                    <input
+                      required type="text" inputMode="numeric" placeholder="How many copies?"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                      value={totalCopies}
+                      onChange={(e) => setTotalCopies(e.target.value.replace(/\D/g, ""))}
+                    />
+                  </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, n) => <BookSkeleton key={n} />)}
-            </div>
-          ) : filteredBooks.length === 0 ? (
-            <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-200">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-gray-50 mb-3">
-                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+                  <div className="md:col-span-2 flex gap-3 pt-2">
+                    <button type="submit" className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg font-medium hover:bg-blue-700 transition shadow-sm hover:shadow">
+                      {editingBookId ? "Update Changes" : "Save Book"}
+                    </button>
+                    <button type="button" onClick={resetForm} className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
               </div>
-              <h3 className="text-base font-semibold text-slate-900">No books found</h3>
-              <p className="text-sm text-gray-500 mt-1">Try adjusting your search terms.</p>
+            )}
+
+            {/* ACTIVE LOANS */}
+            {role === "MEMBER" && myLoans.length > 0 && (
+              <ActiveLoans loans={myLoans} onReturn={handleReturn} />
+            )}
+
+            {/* Catalog Area */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {searchTerm ? `Results for "${searchTerm}"` : "All Books"}
+                </h2>
+                <span className="text-xs font-semibold text-gray-500 bg-white px-3 py-1 rounded-full border border-gray-200 shadow-sm">
+                  {filteredBooks.length} items
+                </span>
+              </div>
+
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(6)].map((_, n) => <BookSkeleton key={n} />)}
+                </div>
+              ) : filteredBooks.length === 0 ? (
+                <div className="text-center py-24 bg-white rounded-2xl border border-dashed border-gray-200">
+                  <h3 className="text-base font-semibold text-slate-900">No books found</h3>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredBooks.map((book) => (
+                    <BookCard
+                      key={book.id} book={book}
+                      onBorrow={() => handleBorrow(book.id)}
+                      onReturn={() => handleReturn(book.id)}
+                      onEdit={() => openEditForm(book)}
+                      onDelete={() => handleDelete(book.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBooks.map((book) => (
-                <BookCard
-                  key={book.id}
-                  book={book}
-                  onBorrow={() => handleBorrow(book.id)}
-                  onReturn={() => handleReturn(book.id)}
-                  onEdit={() => openEditForm(book)}
-                  onDelete={() => handleDelete(book.id)}
-                />
-              ))}
+          </>
+        ) : (
+          /* HISTORY TAB CONTENT */
+          <div className="space-y-6 animate-in fade-in duration-500">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">System Transactions</h2>
+              <p className="text-slate-500">View and track all book assignments and returns.</p>
             </div>
-          )}
-        </div>
+            <TransactionTable transactions={transactions} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,9 +1,11 @@
 package com.library.management.repository;
 
+import com.library.management.dto.borrow.BorrowRecordResponse;
 import com.library.management.model.BorrowRecord;
 import com.library.management.model.BorrowStatus;
 import com.library.management.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,6 +31,11 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
     );
 
     boolean existsByBookIdAndStatus(Long bookId, BorrowStatus status);
+
+    @Query("SELECT new com.library.management.dto.borrow.BorrowRecordResponse(" +
+            "r.id, u.username, b.title, r.issueDate, r.dueDate, r.status) " +
+            "FROM BorrowRecord r JOIN r.user u JOIN r.book b")
+    List<BorrowRecordResponse> findAllTransactionDetails();
 
 }
 

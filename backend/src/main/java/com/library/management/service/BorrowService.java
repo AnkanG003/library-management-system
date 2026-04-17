@@ -1,5 +1,6 @@
 package com.library.management.service;
 
+import com.library.management.dto.borrow.BorrowRecordResponse;
 import com.library.management.model.Book;
 import com.library.management.model.BorrowRecord;
 import com.library.management.model.BorrowStatus;
@@ -113,5 +114,10 @@ public class BorrowService {
 
         // 3. Use your repository method to find only 'ISSUED' books
         return borrowRecordRepository.findByUserAndStatus(user, BorrowStatus.ISSUED);
+    }
+
+    public List<BorrowRecordResponse> getAllTransactions() {
+        List<BorrowRecordResponse> transactions = borrowRecordRepository.findAllTransactionDetails();
+        return transactions;
     }
 }

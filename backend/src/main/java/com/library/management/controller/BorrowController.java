@@ -1,5 +1,6 @@
 package com.library.management.controller;
 
+import com.library.management.dto.borrow.BorrowRecordResponse;
 import com.library.management.model.BorrowRecord;
 import com.library.management.service.BorrowService;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +34,12 @@ public class BorrowController {
     @PreAuthorize("hasRole('MEMBER')") // Only members need to see their personal loans
     public ResponseEntity<List<BorrowRecord>> getMyLoans() {
         return ResponseEntity.ok(borrowService.getMyActiveLoans());
+    }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<BorrowRecordResponse>> getAllTransactions() {
+        List<BorrowRecordResponse> transactions = borrowService.getAllTransactions();
+        return ResponseEntity.ok(transactions);
     }
 }
