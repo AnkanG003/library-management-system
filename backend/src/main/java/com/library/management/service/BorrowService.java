@@ -120,4 +120,26 @@ public class BorrowService {
         List<BorrowRecordResponse> transactions = borrowRecordRepository.findAllTransactionDetails();
         return transactions;
     }
+
+
+    @Transactional
+    public String returnBookByAdmin(Long transactionId) {
+        BorrowRecord record = borrowRecordRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException("Transaction record not found"));
+
+        if (record.getStatus() == BorrowStatus.RETURNED) {
+            return "Book was already marked as returned.";
+        }
+
+        record.setStatus(BorrowStatus.RETURNED);
+        record.setReturnDate(LocalDate.now());
+
+        Book book = record.getBook();
+        book.setAvailableCopies(book.getAvailableCopies() + 1);
+
+        borrowRecordRepository.save(record);
+        bookRepository.save(book);
+
+        return "Book '" + book.getTitle() + "' returned successfully by admin.";
+    }
 }

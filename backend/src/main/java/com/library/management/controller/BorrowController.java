@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 
@@ -29,6 +30,17 @@ public class BorrowController {
     public ResponseEntity<String> returnBook(@PathVariable Long bookId){
         return ResponseEntity.ok(borrowService.returnBook(bookId));
     }
+
+
+    @PostMapping("/admin/return/{transactionId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> adminReturnBook(@PathVariable Long transactionId) {
+        borrowService.returnBookByAdmin(transactionId);
+        // Return a Map so it converts to {"message": "..."}
+        return ResponseEntity.ok(Collections.singletonMap("message", "Book returned successfully"));
+    }
+
+
 
     @GetMapping("/my-loans")
     @PreAuthorize("hasRole('MEMBER')") // Only members need to see their personal loans

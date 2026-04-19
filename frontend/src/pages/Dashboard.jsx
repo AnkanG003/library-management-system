@@ -39,11 +39,12 @@ export default function Dashboard() {
   try {
     const response = await api.get('/borrow/all');
     setTransactions(response.data);
+    fetchBooks(); 
+    
   } catch (error) {
-    console.error("Error fetching transaction logs:", error);
-    alert("Could not load transaction history");
+    console.error("Error updating dashboard data:", error);
   }
-  };
+};
   const fetchMyLoans = async () => {
     try {
       const response = await api.get("/borrow/my-loans");
@@ -332,7 +333,7 @@ export default function Dashboard() {
         {/* Content Switching Logic */}
         {activeTab === 'books' ? (
           <>
-            {/* ADMIN FORM (Keep inside books tab) */}
+            {/* ADMIN FORM (Inside books tab) */}
             {showForm && (
               <div className="bg-white rounded-2xl border border-blue-100 shadow-xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-300 mb-8">
                 {/* ... (Existing form content) ... */}
@@ -430,7 +431,9 @@ export default function Dashboard() {
               <h2 className="text-2xl font-bold text-slate-900">System Transactions</h2>
               <p className="text-slate-500">View and track all book assignments and returns.</p>
             </div>
-            <TransactionTable transactions={transactions} />
+            <TransactionTable transactions={transactions}
+             onRefresh={fetchTransactions} />
+            
           </div>
         )}
       </div>
