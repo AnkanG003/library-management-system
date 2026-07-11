@@ -17,9 +17,9 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     @Query("SELECT b FROM Book b WHERE b.active = true")
     List<Book> findAllActive();
-
-    long countByActiveTrue();
-
-    Optional<Book> findByIdAndActiveTrue(Long id);
+//
+//    long countByActiveTrue();
+//
+//    Optional<Book> findByIdAndActiveTrue(Long id);
 
 }

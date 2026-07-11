@@ -47,6 +47,7 @@ public class AuthController {
 
         String username = authentication.getName();
 
+
         User user = userService.findByUsername(username);
 
 
