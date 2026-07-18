@@ -11,15 +11,6 @@ import java.util.Optional;
 
 @Repository
 public interface BookRepository extends JpaRepository<Book, Long> {
-
-    Optional<Book> findByIsbn(String isbn);
-
-
     @Query("SELECT b FROM Book b WHERE b.active = true")
     List<Book> findAllActive();
-//
-//    long countByActiveTrue();
-//
-//    Optional<Book> findByIdAndActiveTrue(Long id);
-
 }
