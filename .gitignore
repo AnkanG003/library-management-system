@@ -2,7 +2,13 @@
 noode_modules/
 build/
 dist/
+
+#Environment Variables
 .env
+.env.local
+.env.*.local
+frontend/.env
+backend/.env
 
 #Spring Boot
 target/

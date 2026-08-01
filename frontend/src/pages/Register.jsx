@@ -32,7 +32,6 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // ✅ FIXED: Removed "/api" to avoid double path
       await api.post("/auth/register", {
         username: formData.username,
         password: formData.password
