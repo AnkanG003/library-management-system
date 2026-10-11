@@ -31,7 +31,7 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
 
         User user = userService.register(request);
-
+        System.out.println(user);
         return ResponseEntity.ok("User registered with id: " + user.getId());
     }
 

@@ -9,12 +9,12 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-    
+
     // List of public URLs that don't need a token
     const publicEndpoints = ["/auth/login", "/auth/register"];
-    
+
     // Check if the current URL is public
-    const isPublic = publicEndpoints.some((endpoint) => 
+    const isPublic = publicEndpoints.some((endpoint) =>
       config.url.includes(endpoint)
     );
 
@@ -22,7 +22,7 @@ api.interceptors.request.use(
     if (token && !isPublic) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {

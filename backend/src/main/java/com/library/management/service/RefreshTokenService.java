@@ -4,7 +4,7 @@ import com.library.management.model.RefreshToken;
 import com.library.management.model.User;
 import com.library.management.repository.RefreshTokenRepository;
 import com.library.management.security.JwtService;
-import lombok.NoArgsConstructor;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -19,12 +19,14 @@ public class RefreshTokenService{
     private final RefreshTokenRepository refreshTokenRepository;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-
+        @Transactional
         public RefreshToken createRefreshToken(User user){
             refreshTokenRepository.deleteByUser(user);
-
+            refreshTokenRepository.flush();
             UserDetails userDetails =
                     userDetailsService.loadUserByUsername(user.getUsername());
+
+
 
             String token = jwtService.generateRefreshToken(userDetails);
 

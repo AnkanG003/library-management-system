@@ -30,10 +30,13 @@ export default function Login() {
 
       console.log("Login Success:", response.data);
 
-      const { token, role } = response.data;
+      const { accessToken, role, refreshToken } = response.data;
 
       // Store Auth Data
-      localStorage.setItem("token", token);
+      localStorage.setItem("token", accessToken);
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      }
       localStorage.setItem("role", role);
       localStorage.setItem("username", username);
 

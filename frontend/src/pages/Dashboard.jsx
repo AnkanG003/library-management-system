@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import ActiveLoans from "../components/ActiveLoans";
 import api from "../services/api";
 import TransactionTable from "../components/TransactionTable";
+import { getUserRole, getUsername } from "../utils/auth";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const role = localStorage.getItem("role");
-  const username = localStorage.getItem("username");
+  const role = getUserRole();
+  const username = getUsername();
 
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,12 +57,11 @@ export default function Dashboard() {
 
 
   useEffect(() => {
-  fetchBooks();
-  const role = localStorage.getItem("role");
-  if (role === "MEMBER") {
-    fetchMyLoans();
-  }
-}, []);
+    fetchBooks();
+    if (role === "MEMBER") {
+      fetchMyLoans();
+    }
+  }, [role]);
 
 
   // Function to delete a book
@@ -443,7 +443,6 @@ export default function Dashboard() {
 
   // --- Sub-components  ---
   function BookCard({ book, onBorrow, onReturn, onEdit, onDelete }) {
-    const role = localStorage.getItem("role");
     const availabilityPct = (book.availableCopies / book.totalCopies) * 100;
     const isLowStock = book.availableCopies < 3;
 

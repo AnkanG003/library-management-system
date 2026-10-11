@@ -72,9 +72,9 @@ public class JwtService {
     }
 
 
-    public String extractRole(String token){
-        return extractAllClaims(token).get("role",String.class);
-    }
+//    public String extractRole(String token){
+//        return  (token).get("role",String.class);
+//    }
 
     public String extractUsername(String token){
         return extractAllClaims(token).getSubject();
@@ -93,17 +93,11 @@ public class JwtService {
             String token,
             UserDetails userDetails
     ) {
-
         try {
-
             String username = extractUsername(token);
-
             return username.equals(userDetails.getUsername());
-
         } catch (Exception e) {
-
             return false;
-
         }
     }
 
